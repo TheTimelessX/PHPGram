@@ -17,7 +17,7 @@ class PaidMediaVideo {
     public function toArray(): array {
         return [
             "type" => $this->type->value,
-            "video" => $this->video->toArray() ?? null
+            "video" => $this->video ? $this->video->toArray() : null
         ];
     }
 }

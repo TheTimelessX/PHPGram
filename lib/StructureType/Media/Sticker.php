@@ -66,7 +66,7 @@ class Sticker {
             "height"=> $this->height,
             "is_animated"=> $this->is_animated,
             "is_video"=> $this->is_video,
-            "thumbnail"=> $this->thumbnail->toArray() ?? null,
+            "thumbnail"=> $this->thumbnail ? $this->thumbnail->toArray() : null,
             "emoji"=> $this->emoji,
             "set_name"=> $this->set_name,
             "premium_animation"=> $this->premium_animation,

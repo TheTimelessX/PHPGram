@@ -21,7 +21,7 @@ class PaidMediaInfo {
     public function toArray(): array {
         return [
             "star_count"=> $this->star_count,
-            "paid_media"=> $this->paid_media->toArray() ?? null
+            "paid_media"=> $this->paid_media ? $this->paid_media->toArray() : null
         ];
     }
 }

@@ -2,4 +2,6 @@
 
 namespace PHPGram\StructureType;
 
-class ExternalReplyInfo {}
+class ExternalReplyInfo {
+    
+}

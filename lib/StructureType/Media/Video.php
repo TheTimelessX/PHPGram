@@ -48,6 +48,13 @@ class Video {
     }
 
     public function toArray(): array {
+        $cov = $this->cover ?? [];
+        $clean_ = [];
+
+        for ($i = 0;$i < count($cov);$i++){
+            array_push($clean_, $cov[$i]->toArray());
+        }
+
         return [
             "file_id"=> $this->file_id,
             "file_unique_id"=> $this->file_unique_id,
@@ -55,7 +62,7 @@ class Video {
             "height"=> $this->height,
             "duration"=> $this->duration,
             "thumbnail"=> $this->thumbnail,
-            "cover"=> $this->cover,
+            "cover"=> $clean_,
             "start_timestamp"=> $this->start_timestamp,
             "file_name"=> $this->file_name,
             "mime_type"=> $this->mime_type,

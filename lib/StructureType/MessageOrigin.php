@@ -20,7 +20,7 @@ class MessageOrigin {
         return [
             "type"=> $this->type->value,
             "date"=> $this->date,
-            "user"=> $this->user->toArray() ?? null
+            "user"=> $this->user ? $this->user->toArray() : null
         ];
     }
 }

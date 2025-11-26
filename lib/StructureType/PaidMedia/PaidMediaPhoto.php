@@ -22,9 +22,16 @@ class PaidMediaPhoto {
     }
 
     public function toArray(): array {
+        $photos = $this->photo ?? [];
+        $clean_ = [];
+
+        for ($i = 0;$i < count($photos);$i++){
+            array_push($clean_, $photos[$i]->toArray());
+        }
+        
         return [
             "type"=> $this->type->value,
-            "photo"=> $this->photo->toArray() ?? null
+            "photo"=> $clean_
         ];
     }
 }
