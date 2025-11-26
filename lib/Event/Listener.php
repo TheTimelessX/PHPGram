@@ -27,6 +27,15 @@ class Listener {
         return $this->listeners;
     }
 
+    public function getOnlyEvents(): array {
+        $events = [];
+        for ($i = 0; $i < count($this->listeners); $i++){
+            array_push($events, $this->listeners[$i]['event']);
+        }
+
+        return $events;
+    }
+
     public function isEvent(string $event): bool {
         for ($listener = 0;$listener < count($this->listeners);$listener++){
             if ($this->listeners[$listener]['event'] === $event){
