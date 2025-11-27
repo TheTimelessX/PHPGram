@@ -6,6 +6,7 @@ use PHPGram\Event\Listener;
 use PHPGram\Event\Emitter;
 use PHPGram\StructureType\DirectMessageTopic;
 use PHPGram\StructureType\LinkPreviewOptions;
+use PHPGram\StructureType\Media\Document;
 use PHPGram\StructureType\Media\PhotoSize;
 use PHPGram\StructureType\TextQuote;
 use PHPGram\StructureType\User;
@@ -15,10 +16,12 @@ use PHPGram\StructureType\Message;
 
 class Worker extends Listener {
     public Emitter $emitter;
+    public Injector $injector;
     public string $token;
 
     public function __construct(string $token){
         $this->emitter = new Emitter();
+        $this->injector = new Injector();
         $this->token = $token;
     }
 
@@ -26,160 +29,14 @@ class Worker extends Listener {
         $update = json_decode(file_get_contents("php://input"), true);
         if (isset($update["message"])){
             if (in_array("message", parent::getOnlyEvents())){
-                $photos = $update["message"]["photo"] ?? [];
-                $_clean_photos = [];
-
-                for ($i = 0;$i < count($photos);$i++){
-                    $p = new PhotoSize(
-                        $photos[$i]["file_id"],
-                        $photos[$i]["file_unique_id"],
-                        $photos[$i]["width"] ?? null,
-                        $photos[$i]["height"] ?? null,
-                        $photos[$i]["file_size"] ?? null
-                    );
-                    array_push($_clean_photos, $p);
+                $message = $this->injector->inject($update['message']);
+                $listeners = parent::getListeners();
+                for ( $i = 0; $i < count($listeners); $i++ ){
+                    if ($listeners[$i]["event"] === "message"){
+                        $this->emitter->emit($listeners[$i]["listener"], $message);
+                    }
                 }
-
-                $message = new Message(
-                    $update["message"]["message_id"],
-                    $update["message"]["message_thread_id"] ?? null,
-                    isset($update["message"]["direct_message_topic"])
-                        ? new DirectMessageTopic(
-                            $update["message"]["direct_message_topic"]["topic_id"] ?? null,
-                            new User(
-                                $update["message"]["direct_message_topic"]["user"]["id"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["is_bot"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["first_name"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["last_name"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["username"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["language_code"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["is_premium"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["added_to_attachment_menu"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["can_join_groups"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["can_read_all_group_messages"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["supports_inline_queries"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["can_connect_to_business"] ?? null,
-                                $update["message"]["direct_message_topic"]["user"]["has_main_web_app"] ?? null
-                            )
-                        )
-                        : null,
-                    isset($update["message"]["from"])
-                        ? new User(
-                            $update["message"]["from"]["id"] ?? null,
-                            $update["message"]["from"]["is_bot"] ?? null,
-                            $update["message"]["from"]["first_name"] ?? null,
-                            $update["message"]["from"]["last_name"] ?? null,
-                            $update["message"]["from"]["username"] ?? null,
-                            $update["message"]["from"]["language_code"] ?? null,
-                            $update["message"]["from"]["is_premium"] ?? null,
-                            $update["message"]["from"]["added_to_attachment_menu"] ?? null,
-                            $update["message"]["from"]["can_join_groups"] ?? null,
-                            $update["message"]["from"]["can_read_all_group_messages"] ?? null,
-                            $update["message"]["from"]["supports_inline_queries"] ?? null,
-                            $update["message"]["from"]["can_connect_to_business"] ?? null,
-                            $update["message"]["from"]["has_main_web_app"] ?? null
-                        )
-                        : null,
-                    isset($update["message"]["sender_chat"])
-                        ? new Chat(
-                            $update["message"]["sender_chat"]["id"] ?? null,
-                            $update["message"]["sender_chat"]["type"] === "private" ? ChatType::PRIVATE : 
-                            $update["message"]["sender_chat"]["type"] === "group" ? ChatType::GROUP :
-                            $update["message"]["sender_chat"]["type"] === "channel" ? ChatType::CHANNEL :
-                            $update["message"]["sender_chat"]["type"] === "supergroup" ? ChatType::SUPERGROUP : null,
-                            $update["message"]["sender_chat"]["title"] ?? null,
-                            $update["message"]["sender_chat"]["username"] ?? null,
-                            $update["message"]["sender_chat"]["first_name"] ?? null,
-                            $update["message"]["sender_chat"]["last_name"] ?? null,
-                            $update["message"]["sender_chat"]["is_forum"] ?? null,
-                            $update["message"]["sender_chat"]["is_direct_messages"] ?? null
-                        )
-                        : null,
-                    isset($update["message"]["sender_boost_count"]) ? $update["message"]["sender_boost_count"] : null,
-                    isset($update["message"]["sender_business_bot"])
-                        ? new User(
-                            $update["message"]["sender_business_bot"]["id"] ?? null,
-                            $update["message"]["sender_business_bot"]["is_bot"] ?? null,
-                            $update["message"]["sender_business_bot"]["first_name"] ?? null,
-                            $update["message"]["sender_business_bot"]["last_name"] ?? null,
-                            $update["message"]["sender_business_bot"]["username"] ?? null,
-                            $update["message"]["sender_business_bot"]["language_code"] ?? null,
-                            $update["message"]["sender_business_bot"]["is_premium"] ?? null,
-                            $update["message"]["sender_business_bot"]["added_to_attachment_menu"] ?? null,
-                            $update["message"]["sender_business_bot"]["can_join_groups"] ?? null,
-                            $update["message"]["sender_business_bot"]["can_read_all_group_messages"] ?? null,
-                            $update["message"]["sender_business_bot"]["supports_inline_queries"] ?? null,
-                            $update["message"]["sender_business_bot"]["can_connect_to_business"] ?? null,
-                            $update["message"]["sender_business_bot"]["has_main_web_app"] ?? null
-                        )
-                        : null,
-                    isset($update["message"]["date"]) ? $update["message"]["date"] : null,
-                    isset($update["message"]["business_connection_id"]) ? $update["message"]["business_connection_id"] : null,
-                    isset($update["message"]["chat"])
-                        ? new Chat(
-                            $update["message"]["chat"]["id"] ?? null,
-                            $update["message"]["chat"]["type"] === "private" ? ChatType::PRIVATE : 
-                            $update["message"]["chat"]["type"] === "group" ? ChatType::GROUP :
-                            $update["message"]["chat"]["type"] === "channel" ? ChatType::CHANNEL :
-                            $update["message"]["chat"]["type"] === "supergroup" ? ChatType::SUPERGROUP : null,
-                            $update["message"]["chat"]["title"] ?? null,
-                            $update["message"]["chat"]["username"] ?? null,
-                            $update["message"]["chat"]["first_name"] ?? null,
-                            $update["message"]["chat"]["last_name"] ?? null,
-                            $update["message"]["chat"]["is_forum"] ?? null,
-                            $update["message"]["chat"]["is_direct_messages"] ?? null
-                        )
-                        : null,
-                    null,
-                    isset($update["message"]["is_topic_message"]) ? $update["message"]["is_topic_message"] : null,
-                    isset($update["message"]["is_automatic_forward"]) ? $update["message"]["is_automatic_forward"] : null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    isset($update["message"]["via_bot"])
-                        ? new User(
-                            $update["message"]["via_bot"]["id"] ?? null,
-                            $update["message"]["via_bot"]["is_bot"] ?? null,
-                            $update["message"]["via_bot"]["first_name"] ?? null,
-                            $update["message"]["via_bot"]["last_name"] ?? null,
-                            $update["message"]["via_bot"]["username"] ?? null,
-                            $update["message"]["via_bot"]["language_code"] ?? null,
-                            $update["message"]["via_bot"]["is_premium"] ?? null,
-                            $update["message"]["via_bot"]["added_to_attachment_menu"] ?? null,
-                            $update["message"]["via_bot"]["can_join_groups"] ?? null,
-                            $update["message"]["via_bot"]["can_read_all_group_messages"] ?? null,
-                            $update["message"]["via_bot"]["supports_inline_queries"] ?? null,
-                            $update["message"]["via_bot"]["can_connect_to_business"] ?? null,
-                            $update["message"]["via_bot"]["has_main_web_app"] ?? null
-                        )
-                        : null,
-                    isset($update["message"]["edit_date"]) ? $update["message"]["edit_date"] : null,
-                    isset($update["message"]["has_protected_content"]) ? $update["message"]["has_protected_content"] : null,
-                    isset($update["message"]["is_from_offline"]) ? $update["message"]["is_from_offline"] : null,
-                    isset($update["message"]["is_paid_post"]) ? $update["message"]["is_paid_post"] : null,
-                    isset($update["message"]["media_group_id"]) ? $update["message"]["media_group_id"] : null,
-                    isset($update["message"]["author_signature"]) ? $update["message"]["author_signature"] : null,
-                    isset($update["message"]["paid_star_count"]) ? $update["message"]["paid_star_count"] : null,
-                    isset($update["message"]["text"]) ? $update["message"]["text"] : null,
-                    null,
-                    isset($update["message"]["link_preview_options"])
-                        ? new LinkPreviewOptions(
-                            $update["message"]["link_preview_options"]["is_disabled"] ?? null,
-                            $update["message"]["link_preview_options"]["url"] ?? null,
-                            $update["message"]["link_preview_options"]["prefer_small_media"] ?? null,
-                            $update["message"]["link_preview_options"]["prefer_large_media"] ?? null,
-                            $update["message"]["link_preview_options"]["show_above_text"] ?? null
-                        )
-                        : null,
-                    $_clean_photos,
-                    isset()
-                );
             }
         }
     }
 }
-
-
-// reply_to_message
